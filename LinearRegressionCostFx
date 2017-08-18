@@ -1,0 +1,46 @@
+import os
+import numpy
+import pandas
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.wrappers.scikit_learn import KerasRegressor
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import KFold
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+## Linear regression predictive model
+os.chdir('/home/user/share')
+
+# load dataset
+dataframe1=pandas.read_csv("ACT14_training_csv.csv", delim_whitespace=False, header=None)
+dataframe2=pandas.read_csv("ACT14_activity.csv", delim_whitespace=False, header=None)
+
+dataset1=dataframe1.values
+dataset2=dataframe2.values
+
+# split into input(X) and output (Y) variables
+
+X=dataset1[:,0:5945]
+Y=dataset2[:,0]
+
+# define base model
+def baseline_model():
+	# Create model
+	model = Sequential()
+	model.add(Dense(100, input_dim=5945, kernel_initializer='normal', activation='relu'))
+	model.add(Dense(1, kernel_initializer='normal'))
+	# Compile model
+	model.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
+	return model
+	
+	
+# fix random seed for reproducibility
+seed = 7
+numpy.random.seed(seed)
+
+# evaluate model with standardized dataset using 10-fold cross validation
+estimator = KerasRegressor(build_fn=baseline_model, nb_epoch=100, batch_size=5, verbose=0)
+
+kfold = KFold(n_splits=10, random_state=seed)
+results = cross_val_score(estimator, X, Y, cv=kfold)
+print("Results: %.2f (%.2f) MSE" % (results.mean(), results.std()))
